@@ -26,3 +26,28 @@ npm run test:watch  # re-runs affected tests on save
     nothing else is dropped
   - **Degraded path**: when CreditScoreService times out, everything not dependent on the
     score is still returned, and the exclusive that could not be verified is withheld
+
+## Design/Architecture
+
+```text
+  User Context                claims, advance history, user attributes
+       |
+       v
+  Candidate Offers            one or more per product
+       |
+       v
+  [ Rule Engine ]             evaluates each offer's rules
+       |                      against the same context
+       v
+  Eligible Offers
+       |
+       v
+  [ Precedence Resolution ]   exclusive supersedes baseline
+       |                      for the same product
+       v
+  Final Offers
+```
+
+Each offer defines the rules required for eligibility. The rule engine evaluates those
+rules through a common contract, regardless of whether a rule is a simple threshold, an
+external lookup, or a time-window calculation.
