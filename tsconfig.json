@@ -1,0 +1,30 @@
+{
+  "compilerOptions": {
+    // Environment: vitest runs the TypeScript directly, so we typecheck only.
+    "module": "preserve",
+    "target": "esnext",
+    "lib": ["esnext"],
+    "types": ["node"],
+    "noEmit": true,
+
+    // Strictness. exactOptionalPropertyTypes and noUncheckedIndexedAccess are
+    // deliberate: this module decides who sees a partner-exclusive offer, so an
+    // accidental undefined must be a compile error, not a runtime surprise.
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "noImplicitReturns": true,
+    "noImplicitOverride": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+
+    // Recommended
+    "verbatimModuleSyntax": true,
+    "isolatedModules": true,
+    "noUncheckedSideEffectImports": true,
+    "moduleDetection": "force",
+    "skipLibCheck": true
+  },
+  "include": ["src/**/*.ts", "*.config.ts"]
+}
