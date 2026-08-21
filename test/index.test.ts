@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { MODULE_NAME } from './index';
+import { MODULE_NAME } from '../src';
 
 // Scaffolding smoke test: proves TypeScript + vitest are wired up.
 // Replaced by real coverage as the module lands.
