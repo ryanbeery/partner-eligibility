@@ -1,0 +1,40 @@
+# Extra credit for assessment illustration purposes. Included to show what enforcing the isolation,
+# precedence, and degraded-path tests would actually look like, since the assessment
+# calls for them to be CI-runnable and a test that runs only when someone
+# remembers to run it does not stop a regression.
+name: CI
+
+# Branches reach main through pull requests, so `push` is narrowed to main.
+# Leaving it open would fire both triggers on every push to a branch with an
+# open PR, running the same commit twice. The run on main is still worth having
+# after merge, since main can move underneath a PR that was green on its own.
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# A new push to a PR makes the in-flight run obsolete, so cancel it.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # Shows in status checks as "CI / typecheck-and-test".
+  typecheck-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      # `ci` rather than `install`: installs exactly the locked versions and
+      # fails if package.json and the lockfile disagree.
+      - run: npm ci
+
+      # Typechecks, then runs the suite. Either failing exits non-zero and
+      # fails the build.
+      - run: npm test
