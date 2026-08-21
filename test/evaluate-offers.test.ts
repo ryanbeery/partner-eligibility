@@ -1,8 +1,81 @@
-import { describe, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
+import { evaluateOffers } from '../src/evaluate-offers';
+import type { Offer } from '../src/offer';
+import { baselineOffers } from '../src/offers/baseline.offers';
+import { buildUserContext } from './build-user-context';
 
-// Top-level entry point. These three groups are the required,
-// must-fail-loudly tests called out in the case study brief.
+const idsOf = (offers: readonly Offer[]) => offers.map((offer) => offer.id);
+
 describe('evaluateOffers', () => {
+  describe('wiring', () => {
+    it('returns every baseline offer for an adult US resident', async () => {
+      const result = await evaluateOffers(buildUserContext(), baselineOffers);
+
+      expect(idsOf(result.offers)).toEqual(['baseline-savings', 'baseline-credit-card']);
+    });
+
+    it('returns nothing for a user under 18', async () => {
+      const result = await evaluateOffers(buildUserContext({ user: { age: 17 } }), baselineOffers);
+
+      expect(result.offers).toEqual([]);
+    });
+
+    it('returns nothing for a non-US resident', async () => {
+      const result = await evaluateOffers(
+        buildUserContext({ user: { country: 'CA' } }),
+        baselineOffers,
+      );
+
+      expect(result.offers).toEqual([]);
+    });
+
+    it('withholds nothing when every rule could be checked', async () => {
+      const result = await evaluateOffers(buildUserContext(), baselineOffers);
+
+      expect(result.withheld).toEqual([]);
+    });
+  });
+
+  // The general shape of the degraded path, exercised here with a stand-in
+  // offer. The Meridian-specific cases below cover it once that module exists.
+  describe('an offer whose rules cannot be checked', () => {
+    const catalog: readonly Offer[] = [
+      ...baselineOffers,
+      {
+        id: 'unverifiable-exclusive',
+        product: 'savings-account',
+        type: 'exclusive',
+        priority: 100,
+        rules: [
+          async () => {
+            throw new Error('score service down');
+          },
+        ],
+      },
+    ];
+
+    it('is withheld rather than returned unverified', async () => {
+      const result = await evaluateOffers(buildUserContext(), catalog);
+
+      expect(idsOf(result.offers)).not.toContain('unverifiable-exclusive');
+    });
+
+    it('is reported in the withheld record with a reason, not silently dropped', async () => {
+      const result = await evaluateOffers(buildUserContext(), catalog);
+
+      expect(idsOf(result.withheld.map((entry) => entry.offer))).toEqual([
+        'unverifiable-exclusive',
+      ]);
+      expect(result.withheld[0]?.reasons.join()).toContain('score service down');
+    });
+
+    it('does not withhold the offers that could be checked', async () => {
+      const result = await evaluateOffers(buildUserContext(), catalog);
+
+      expect(idsOf(result.offers)).toEqual(['baseline-savings', 'baseline-credit-card']);
+    });
+  });
+
   describe('isolation', () => {
     it.todo('never returns the Meridian exclusive for a user with no Meridian claim');
     it.todo('never returns the Meridian exclusive for a user with a claim for a different partner');
