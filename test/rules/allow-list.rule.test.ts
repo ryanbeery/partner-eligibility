@@ -1,6 +1,6 @@
 import { assert, describe, expect, it, vi } from 'vitest';
 import { allowListRule } from '../../src/rules/allow-list.rule';
-import { buildUserContext } from '../support/build-user-context';
+import { buildUserContext } from '../build-user-context';
 
 // Generic shape: value is a member of an allowed set. Distinct from
 // thresholdRule because membership carries no ordering.

@@ -1,6 +1,6 @@
 import { assert, describe, expect, it, vi } from 'vitest';
 import { thresholdRule } from '../../src/rules/threshold.rule';
-import { buildUserContext } from '../support/build-user-context';
+import { buildUserContext } from '../build-user-context';
 
 // Generic shape: value >= minimum, inclusive at the boundary.
 // Serves baseline (age >= 18) and Meridian (credit score >= 640). Tested
