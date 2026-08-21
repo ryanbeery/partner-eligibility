@@ -1,5 +1,7 @@
+import { creditScoreService } from './credit-score.service';
 import type { Offer } from './offer';
 import { baselineOffers } from './offers/baseline.offers';
+import { createMeridianOffers } from './offers/meridian.offers';
 
 /**
  * Every offer considered for a request, in the order partners were registered.
@@ -12,4 +14,7 @@ export type Catalog = readonly Offer[];
  * module, so adding a partner is one import and one entry here, with no change
  * to the rule engine or the precedence resolver.
  */
-export const catalog: Catalog = [...baselineOffers];
+export const catalog: Catalog = [
+  ...baselineOffers,
+  ...createMeridianOffers(creditScoreService),
+];

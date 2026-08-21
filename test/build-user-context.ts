@@ -17,9 +17,18 @@ export const buildUserContext = (overrides: UserContextOverrides = {}): UserCont
   user: {
     age: overrides.user?.age ?? 30,
     country: overrides.user?.country ?? 'US',
+    state: overrides.user?.state ?? 'TX',
   },
   // No claims by default: a Direct member is the case that must never see an
   // exclusive, so tests have to opt in to being a partner member.
   claims: overrides.claims ?? {},
   evaluationTime: overrides.evaluationTime ?? new Date('2026-08-21T00:00:00.000Z'),
 });
+
+/**
+ * A member arriving with a trusted Meridian claim, otherwise identical to the
+ * defaults above. Every other Meridian requirement is met by default, so a test
+ * overrides only the one it is exercising.
+ */
+export const buildMeridianMember = (overrides: UserContextOverrides = {}): UserContext =>
+  buildUserContext({ ...overrides, claims: { meridian: { partnerId: 'meridian' } } });

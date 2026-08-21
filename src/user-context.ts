@@ -14,6 +14,7 @@ export type PartnerId = 'meridian' | 'northwind';
 export type User = {
   age: number;
   country: string;
+  state: string;
 };
 
 export type MeridianClaim = {
