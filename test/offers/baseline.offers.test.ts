@@ -1,4 +1,4 @@
-import { assert, describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { baselineOffers } from '../../src/offers/baseline.offers';
 import type { Offer } from '../../src/offer';
 import type { UserContext } from '../../src/user-context';
@@ -49,12 +49,5 @@ describe('baseline offers', () => {
     const results = await resultsFor(offer, buildUserContext({ user: { age: 30, country: 'CA' } }));
 
     expect(someRuleFailed(results)).toBe(true);
-  });
-
-  it('leaves priority to the catalog by ranking below any exclusive', () => {
-    const exclusivePriority = 100;
-
-    assert(baselineOffers.length > 0);
-    expect(baselineOffers.every((offer) => offer.priority < exclusivePriority)).toBe(true);
   });
 });

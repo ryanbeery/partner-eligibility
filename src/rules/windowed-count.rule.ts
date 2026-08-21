@@ -1,6 +1,6 @@
 import type { Rule, ValueGetter } from './rule';
 
-export type Window = {
+type Window = {
   /** How far back from the evaluation time the window reaches. */
   windowMs: number;
   /** The most events allowed inside it. */

@@ -36,22 +36,21 @@ These were settled in design discussion. Do not reopen them mid-implementation w
 - Precedence resolves per product: highest-priority eligible offer wins, ties broken by stable
   catalog order. Exclusive-beats-baseline falls out of this as a special case.
 - Adding a partner is a module plus one catalog entry, with no change to the engine or resolver.
-- `src/evaluate-offers.ts` is the central entry point and re-exports the public surface, but type
-  and constant definitions live next to their concern (`src/user-context.ts`, `src/rules/rule.ts`,
-  `src/offer.ts`). Defining them in the entry point would make leaf modules import back from the
-  root. Genuinely evaluation-level constants, such as the timeout budget, do belong in the entry
-  point.
-- `UserContext`'s exact shape is still unsettled. Tests reach it only through
-  `test/support/build-user-context.ts`, so the shape is encoded in one place and rule-shape tests
-  stay agnostic to it. A first attempt was rejected for designing the whole type up front; grow it
-  field by field as tests demand.
+- `src/evaluate-offers.ts` is the central entry point. Type and constant definitions live next to
+  their concern (`src/user-context.ts`, `src/rules/rule.ts`, `src/offer.ts`,
+  `src/engine/deadline.ts`) rather than in the entry point, which would make leaf modules import
+  back from the root. There is deliberately no barrel file: one was added and removed once nothing
+  imported it, and it cost an edit per new export.
+- Tests reach `UserContext` only through `test/build-user-context.ts`, so its shape is encoded in
+  one place and rule-shape tests stay agnostic to it. An early attempt at the type was rejected for
+  designing it all up front; it was grown field by field as tests demanded. Keep doing that.
 
-## Standing reminder: concurrency comment
+## Deferred concurrency work (recorded in code)
 
-Perfecting concurrency is explicitly out of scope for initial completion. **When work reaches the
-rule engine, the deadline/timeout code, or the `CreditScoreService` mock, prompt Ryan to add a code
-comment at that seam naming the deferred work.** Raise it for him to act on rather than writing the
-comment unprompted. The two deferred refinements are:
+Perfecting concurrency is explicitly out of scope. The seams are now marked: see the `TODO` on
+`evaluateOffer` in `src/engine/evaluate-offer.ts`, the note at the credit score call site in
+`src/offers/meridian.offers.ts`, and the `AbortSignal` mention in `src/credit-score.service.ts`.
+The two deferred refinements are:
 
 1. **Cost-aware staging**: a cheap failing rule gates an expensive external call so the call is
    never made.
