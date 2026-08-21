@@ -36,17 +36,40 @@ export type NorthwindClaim = {
  * and resolve it arbitrarily. The key also carries the discriminant, so a
  * lookup is already narrowed to that partner's claim type.
  *
- * Adding a partner is one entry here plus one in `PartnerId`.
+ * A user may hold several claims at once, and the "member of both partners"
+ * case in the evaluate-offers tests depends on that.
+ *
+ * Next step: partners are currently listed twice, here and in `PartnerId`, so
+ * adding one means editing both and they can drift apart. Deriving both from a
+ * single map makes it one edit:
+ *
+ *   type PartnerClaimMap = { meridian: MeridianClaim; northwind: NorthwindClaim };
+ *   type PartnerId = keyof PartnerClaimMap;
+ *   type PartnerClaims = Partial<PartnerClaimMap>;
+ *
+ * Left as is for now because two partners is not yet enough duplication to pay
+ * for the indirection.
  */
 export type PartnerClaims = {
   meridian?: MeridianClaim;
   northwind?: NorthwindClaim;
 };
 
+/**
+ * One previously taken earned-wage advance. A list rather than a keyed
+ * structure, unlike claims: repeated advances are legitimate, so there is no
+ * invalid state to design out.
+ */
+export type AdvanceHistory = {
+  takenAt: Date;
+};
+
 export type UserContext = {
   user: User;
   /** Trusted as already verified by the upstream authentication layer. */
   claims: PartnerClaims;
+  /** Read-only: evaluation is a query, so no rule should mutate the history. */
+  advanceHistory: readonly AdvanceHistory[];
   /**
    * Injected rather than read from the clock, so tenure and window checks are
    * deterministic. Every time-based rule and the engine's deadline resolve

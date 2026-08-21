@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { assert, describe, expect, it } from 'vitest';
 import type { Offer } from '../../src/offer';
 import { baselineOffers } from '../../src/offers/baseline.offers';
 import { createMeridianOffers } from '../../src/offers/meridian.offers';
@@ -11,9 +11,11 @@ import { scoringService } from '../credit-score.service.mock';
 // correct while the offer binds it to the wrong threshold.
 
 // Helper functions to allow for easy, reusable data creation and validation between tests
+// The guard is for the type checker, not the runtime: noUncheckedIndexedAccess
+// types an indexed read as possibly undefined.
 const meridianSavings = (score: number): Offer => {
   const [offer] = createMeridianOffers(scoringService(score));
-  if (offer === undefined) throw new Error('expected a Meridian offer');
+  assert(offer, 'expected a Meridian offer');
   return offer;
 };
 

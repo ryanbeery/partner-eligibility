@@ -2,6 +2,7 @@ import { creditScoreService } from './credit-score.service';
 import type { Offer } from './offer';
 import { baselineOffers } from './offers/baseline.offers';
 import { createMeridianOffers } from './offers/meridian.offers';
+import { northwindOffers } from './offers/northwind.offers';
 
 /**
  * Every offer considered for a request, in the order partners were registered.
@@ -17,4 +18,5 @@ export type Catalog = readonly Offer[];
 export const catalog: Catalog = [
   ...baselineOffers,
   ...createMeridianOffers(creditScoreService),
+  ...northwindOffers,
 ];

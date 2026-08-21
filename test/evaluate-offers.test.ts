@@ -4,7 +4,8 @@ import { evaluateOffers } from '../src/evaluate-offers';
 import type { Offer } from '../src/offer';
 import { baselineOffers } from '../src/offers/baseline.offers';
 import { createMeridianOffers } from '../src/offers/meridian.offers';
-import { buildMeridianMember, buildUserContext } from './build-user-context';
+import { northwindOffers } from '../src/offers/northwind.offers';
+import { buildMeridianMember, buildNorthwindMember, buildUserContext } from './build-user-context';
 import { failingScoreService, hangingScoreService, scoringService } from './credit-score.service.mock';
 
 const idsOf = (offers: readonly Offer[]) => offers.map((offer) => offer.id);
@@ -12,6 +13,7 @@ const idsOf = (offers: readonly Offer[]) => offers.map((offer) => offer.id);
 const catalogWith = (creditScore: CreditScoreService): readonly Offer[] => [
   ...baselineOffers,
   ...createMeridianOffers(creditScore),
+  ...northwindOffers,
 ];
 
 describe('evaluateOffers', () => {
@@ -77,7 +79,18 @@ describe('evaluateOffers', () => {
       expect(idsOf(result.offers)).not.toContain('meridian-savings');
     });
 
-    it.todo('never returns the Northwind exclusive for a user with no Northwind claim');
+    it('never returns the Northwind exclusive for a user with no Northwind claim', async () => {
+      const result = await evaluateOffers(buildUserContext(), catalogWith(scoringService(800)));
+
+      expect(idsOf(result.offers)).not.toContain('northwind-advance');
+    });
+
+    // A Direct member must see only baseline offers, whatever else is registered.
+    it('returns only baseline offers for a user with no partner claims at all', async () => {
+      const result = await evaluateOffers(buildUserContext(), catalogWith(scoringService(800)));
+
+      expect(idsOf(result.offers)).toEqual(['baseline-savings', 'baseline-credit-card']);
+    });
   });
 
   describe('precedence', () => {
@@ -94,7 +107,33 @@ describe('evaluateOffers', () => {
       expect(idsOf(result.offers)).toEqual(['meridian-savings', 'baseline-credit-card']);
     });
 
-    it.todo('the Northwind advance offer is added alongside baseline offers since it has no baseline equivalent');
+    // No baseline exists for earned-wage-advance, so this offer supersedes
+    // nothing and is simply added to what the user already sees.
+    it('adds the Northwind advance alongside the baseline offers rather than replacing one', async () => {
+      const result = await evaluateOffers(buildNorthwindMember(), catalogWith(scoringService(800)));
+
+      expect(idsOf(result.offers)).toEqual([
+        'baseline-savings',
+        'baseline-credit-card',
+        'northwind-advance',
+      ]);
+    });
+
+    // Holding both partners' claims exercises the two precedence outcomes at
+    // once: superseding a baseline, and adding where there is none.
+    it('supersedes on one product and adds on another for a member of both partners', async () => {
+      const context = buildNorthwindMember({ claims: { meridian: { partnerId: 'meridian' } } });
+
+      const result = await evaluateOffers(context, catalogWith(scoringService(700)));
+
+      // The exclusive takes over the savings-account slot in place, so it keeps
+      // that product's original catalog position rather than moving to the end.
+      expect(idsOf(result.offers)).toEqual([
+        'meridian-savings',
+        'baseline-credit-card',
+        'northwind-advance',
+      ]);
+    });
   });
 
   // One dependency being down must degrade the response, not fail it.
@@ -129,6 +168,20 @@ describe('evaluateOffers', () => {
       expect(idsOf(result.withheld.map((entry) => entry.offer))).toEqual(['meridian-savings']);
     });
 
-    it.todo('when CreditScoreService fails, an earned Northwind advance offer is still returned');
+    // The whole point of the degraded path: one dependency being down withholds
+    // only what depended on it. The advance is earned without a credit score,
+    // so it must survive the outage untouched.
+    it('still returns an earned Northwind advance when the credit score service fails', async () => {
+      const context = buildNorthwindMember({ claims: { meridian: { partnerId: 'meridian' } } });
+
+      const result = await evaluateOffers(context, catalogWith(failingScoreService));
+
+      expect(idsOf(result.offers)).toEqual([
+        'baseline-savings',
+        'baseline-credit-card',
+        'northwind-advance',
+      ]);
+      expect(idsOf(result.withheld.map((entry) => entry.offer))).toEqual(['meridian-savings']);
+    });
   });
 });
