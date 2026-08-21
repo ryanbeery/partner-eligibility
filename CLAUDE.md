@@ -22,10 +22,13 @@ than re-deriving them. If code and that doc disagree, raise it instead of silent
 
 These were settled in design discussion. Do not reopen them mid-implementation without flagging it:
 
-- Rules are generic shapes (`thresholdRule`, `timeElapsedRule`, `windowedCountRule`,
-  `claimPresentRule`) composed per partner at the Offer/Catalog layer. **No partner-named rule files.**
-  The brief's core requirement is that one abstraction holds differently-shaped rules with no
-  special-casing.
+- Rules are generic shapes (`thresholdRule`, `allowListRule`, `timeElapsedRule`,
+  `windowedCountRule`, `claimPresentRule`) composed per partner at the Offer/Catalog layer.
+  **No partner-named rule files.** The brief's core requirement is that one abstraction holds
+  differently-shaped rules with no special-casing. Rule-shape tests stay domain-agnostic; the
+  concrete numbers (18, `'US'`, 640, 90, 2) are wiring, proved at the offer layer.
+- `allowListRule` (value is a member of an allowed set) was added as a fifth shape because none of
+  the original four covered baseline's US-residency check or Meridian's eligible-state check.
 - Rule evaluation is uniformly async and returns three states: `pass`, `fail`, `unavailable`.
   `unavailable` means the check could not be completed, which is what makes fail-closed structural.
 - Rules capture their dependencies at construction time, not at evaluation time.
@@ -33,6 +36,15 @@ These were settled in design discussion. Do not reopen them mid-implementation w
 - Precedence resolves per product: highest-priority eligible offer wins, ties broken by stable
   catalog order. Exclusive-beats-baseline falls out of this as a special case.
 - Adding a partner is a module plus one catalog entry, with no change to the engine or resolver.
+- `src/evaluate-offers.ts` is the central entry point and re-exports the public surface, but type
+  and constant definitions live next to their concern (`src/user-context.ts`, `src/rules/rule.ts`,
+  `src/offer.ts`). Defining them in the entry point would make leaf modules import back from the
+  root. Genuinely evaluation-level constants, such as the timeout budget, do belong in the entry
+  point.
+- `UserContext`'s exact shape is still unsettled. Tests reach it only through
+  `test/support/build-user-context.ts`, so the shape is encoded in one place and rule-shape tests
+  stay agnostic to it. A first attempt was rejected for designing the whole type up front; grow it
+  field by field as tests demand.
 
 ## Standing reminder: concurrency comment
 
