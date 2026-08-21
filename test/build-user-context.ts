@@ -1,7 +1,8 @@
-import type { User, UserContext } from '../src/user-context';
+import type { PartnerClaims, User, UserContext } from '../src/user-context';
 
 type UserContextOverrides = {
   user?: Partial<User>;
+  claims?: PartnerClaims;
   evaluationTime?: Date;
 };
 
@@ -17,5 +18,8 @@ export const buildUserContext = (overrides: UserContextOverrides = {}): UserCont
     age: overrides.user?.age ?? 30,
     country: overrides.user?.country ?? 'US',
   },
+  // No claims by default: a Direct member is the case that must never see an
+  // exclusive, so tests have to opt in to being a partner member.
+  claims: overrides.claims ?? {},
   evaluationTime: overrides.evaluationTime ?? new Date('2026-08-21T00:00:00.000Z'),
 });
