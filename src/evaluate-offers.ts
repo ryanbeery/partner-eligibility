@@ -25,6 +25,17 @@ export type EvaluationResult = {
 /**
  * Decides which offers a user is eligible to see.
  *
+ * The public entry point. The registered catalog and the standard latency budget
+ * are bound here, so a caller supplies only the user context. Tests reach for
+ * evaluateCatalog instead, to vary the catalog and the budget without touching
+ * module-level state.
+ */
+export const evaluateOffers = (context: UserContext): Promise<EvaluationResult> =>
+    evaluateCatalog(context, defaultCatalog, DEFAULT_BUDGET_MS);
+
+/**
+ * The full-control form, taking an explicit catalog and budget.
+ *
  * Offers are evaluated concurrently against one shared deadline, so the request
  * costs about as long as its slowest rule rather than the sum of all of them,
  * and a slow dependency cannot push the whole evaluation past the budget.
@@ -32,10 +43,10 @@ export type EvaluationResult = {
  * A dependency failure marks only the rules that needed it, so it withholds the
  * offers depending on that dependency and never fails the request.
  */
-export const evaluateOffers = async (
+export const evaluateCatalog = async (
   context: UserContext,
-  catalog: Catalog = defaultCatalog,
-  budgetMs: number = DEFAULT_BUDGET_MS,
+  catalog: Catalog,
+  budgetMs: number,
 ): Promise<EvaluationResult> => {
   const deadline = createDeadline(budgetMs);
 
